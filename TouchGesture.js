@@ -54,9 +54,21 @@ TouchGesture.VideoGesture.prototype.listenDom=function(){
     var touchStartHandler=this.onTouchStart.bind(this);
     var touchEndHandler=this.onTouchEnd.bind(this);
     var touchMoveHandler=this.onTouchMove.bind(this);
-    this._videoElement.parentElement.addEventListener("touchstart",touchStartHandler,false);
-    this._videoElement.parentElement.addEventListener("touchend",touchEndHandler,false);
-    this._videoElement.parentElement.addEventListener("touchmove",touchMoveHandler,false);
+    var targetElement=this._videoElement;
+    var topest=false;
+    while(!topest){
+        var temp=targetElement.parentElement;
+        var size1=targetElement.offsetWidth*targetElement.offsetHeight;
+        var size2=temp.offsetWidth*temp.offsetHeight;
+        if(temp.offsetWidth>=targetElement.offsetWidth&&temp.offsetHeight>=targetElement.offsetHeight&&size2/size1<=1.1){
+            targetElement=temp;
+        }else{
+            topest=true;
+        }
+    }
+    targetElement.addEventListener("touchstart",touchStartHandler,false);
+    targetElement.addEventListener("touchend",touchEndHandler,false);
+    targetElement.addEventListener("touchmove",touchMoveHandler,false);
 };
 
 TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
@@ -271,7 +283,7 @@ function seconds2TimeStr(secs){
 (function() {
     'use strict';
     // Your code here...
-    console.log('hello Greasemonkey');
+    // console.log('hello Greasemonkey');
     GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 999999;  top: 100px;  left: 200px;  background-color: black; } ');
     GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; }  div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s;       -moz-transition: all 1.5s;       -ms-transition: all 1.5s;       -o-transition: all 1.5s;       transition: all 1.5s;       opacity: 0;      }');
     GM_addStyle('div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
