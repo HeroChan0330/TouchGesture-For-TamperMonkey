@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.00
+// @version      2.01
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -417,19 +417,17 @@ function tg_IsFullscreen(){
     }
     initForbidScrollList();
     document.addEventListener('touchmove', function(e){
-        console.log(e.srcElement.classList[0]);
+        // console.log(e.srcElement.classList[0]);
         if(e.srcElement.tagName!="VIDEO"&&forbidScrollList.indexOf(e.srcElement.classList[0])<0){
             TouchGesture.forbidScroll=false;
         }
         if(TouchGesture.forbidScroll==true){
-            e.preventDefault && e.preventDefault();
-            e.returnValue=false;
-            e.stopPropagation && e.stopPropagation();
+            e.preventDefault();
             return false;
         }
         return true;
     },{ passive: false });
 
     TouchGesture.VideoGesture.insertAll();
-    setInterval(TouchGesture.VideoGesture.insertAll, 1000);
+    setInterval(TouchGesture.VideoGesture.insertAll, 1500);
 })();
