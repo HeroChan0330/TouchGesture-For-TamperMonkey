@@ -1,7 +1,11 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
+<<<<<<< HEAD
 // @version      1.01
+=======
+// @version      1.02
+>>>>>>> 2f727778b2098164563822aa83c0645380ec69d3
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -11,7 +15,7 @@
 // ==/UserScript==
 
 var TouchGesture={forbidScroll:false};
-
+var TouchGestureWhiteLists=["bilibili-player-dm-tip-wrap","yk-trigger-layer"];
 
 
 TouchGesture.VideoGesture=function(videoElement){
@@ -26,6 +30,8 @@ TouchGesture.VideoGesture=function(videoElement){
     this._parentElement=videoElement.parentElement;
     this._element=null;
     this._toastText=null;
+    this._eventListenElement=null;
+
     this.createDom(this._parentElement);
     this.listenDom();
 };
@@ -55,20 +61,31 @@ TouchGesture.VideoGesture.prototype.listenDom=function(){
     var touchEndHandler=this.onTouchEnd.bind(this);
     var touchMoveHandler=this.onTouchMove.bind(this);
     var targetElement=this._videoElement;
-    var topest=false;
-    while(!topest){
-        var temp=targetElement.parentElement;
-        var size1=targetElement.offsetWidth*targetElement.offsetHeight;
-        var size2=temp.offsetWidth*temp.offsetHeight;
-        if(temp.offsetWidth>=targetElement.offsetWidth&&temp.offsetHeight>=targetElement.offsetHeight&&size2/size1<=1.1){
-            targetElement=temp;
-        }else{
-            topest=true;
+    if(document.fullscreenElement!=null){
+        targetElement=document.fullscreenElement;
+    }else{   
+        var topest=false;
+        while(!topest){
+            targetElement.classList.add("TouchGestureForbidScroll");
+            var temp=targetElement.parentElement;
+            var size1=targetElement.offsetWidth*targetElement.offsetHeight;
+            var size2=temp.offsetWidth*temp.offsetHeight;
+            if(temp.offsetWidth>=targetElement.offsetWidth&&temp.offsetHeight>=targetElement.offsetHeight&&size2/size1<=1.1){
+                targetElement=temp;
+            }else{
+                topest=true;
+            }
         }
+    }
+    if(this._eventListenElement!=null){
+        this._eventListenElement.removeEventListener("touchstart",touchStartHandler);
+        this._eventListenElement.removeEventListener("touchend",touchEndHandler);
+        this._eventListenElement.removeEventListener("touchmove",touchMoveHandler);
     }
     targetElement.addEventListener("touchstart",touchStartHandler,false);
     targetElement.addEventListener("touchend",touchEndHandler,false);
     targetElement.addEventListener("touchmove",touchMoveHandler,false);
+    this._eventListenElement=targetElement;
 };
 
 TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
@@ -174,14 +191,17 @@ TouchGesture.VideoGesture.prototype.adjustLayout=function(){
         if(document.fullscreenElement.tagName=="HTML"&&this._parentElement.tagName!="BODY"){
             this._parentElement.removeChild(this._element);
             this.createDom(document.body);
+            this.listenDom();
         }else if(document.fullscreenElement!=this._parentElement){
             this._parentElement.removeChild(this._element);
             // this._parentElement=document.fullscreenElement;
             this.createDom(document.fullscreenElement);
+            this.listenDom();
         }
     }else if(document.fullscreenElement==null&&this._parentElement!=this._videoElement.parentElement){
         this._parentElement.removeChild(this._element);
         this.createDom(this._videoElement.parentElement);
+        this.listenDom();
     }
     var videoTarget=this._videoElement;
     var vw=videoTarget.offsetWidth,vh=videoTarget.offsetHeight;
@@ -240,12 +260,15 @@ TouchGesture.VideoGesture.insertDom=function(dom){
 TouchGesture.VideoGesture.insertAll=function(){
     // var self=this;
     TouchGesture.VideoGesture.insertDom(document);
-    // var iframes=document.getElementsByTagName("iframe");
-    // Array.prototype.forEach.call(iframes, function(iframeTag) {
-    //     // console.log(iframeTag.contentWindow.document.getElementsByTagName("video"));
-    //     // iframeTag
-    //     TouchGesture.VideoGesture.insertDom(iframeTag.contentWindow.document);
-    // });
+
+    TouchGestureWhiteLists.forEach((className)=>{
+        //执行代码
+        var elements=document.getElementsByClassName(className);
+        Array.prototype.forEach.call(elements, function(element) {
+            element.classList.add("TouchGestureForbidScroll");
+        });
+    });
+
 };
 
 TouchGesture.VideoGesture.prototype.forbidScroll=function(){
@@ -290,7 +313,7 @@ function seconds2TimeStr(secs){
 
 
     document.addEventListener('touchmove', function(e){
-        if(e.srcElement.tagName!="VIDEO"){
+        if(e.srcElement.tagName!="VIDEO"&&!e.srcElement.classList.contains("TouchGestureForbidScroll")){
             TouchGesture.forbidScroll=false;
         }
         if(TouchGesture.forbidScroll==true){
