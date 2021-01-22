@@ -156,6 +156,9 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
 // };
 
 TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
+    if(this._videoElement.src.length<=2){
+        return;
+    }
     this.forbidScroll();
     // console.log(e);
     this.setElementLayout();
