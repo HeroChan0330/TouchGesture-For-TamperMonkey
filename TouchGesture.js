@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.01
+// @version      2.02
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -47,7 +47,7 @@ TouchGesture.VideoGesture=function(videoElement){
     this._eventListenElement=null;//监听触摸动作的元素
 
     this._fullScreenNow=tg_IsFullscreen();
-    console.log("_fullScreenNow:"+this._fullScreenNow);
+    // console.log("_fullScreenNow:"+this._fullScreenNow);
 
     // console.log(TouchGestureWhiteList);
     // console.log(TouchGestureWhiteList["www.bilibili.com"]!=null);
@@ -64,10 +64,10 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     toastDiv.classList.add("TouchGesture_Toast");
     toastText.classList.add("TouchGesture_ToastText");
     toastDiv.style.display="none";
- 
+
     this._elementFrame=toastDiv;
     this._toastText=toastText;
-    
+
     this._elementFrame.classList.add("TouchGestureForbidScroll");
     this._toastText.classList.add("TouchGestureForbidScroll");
 
@@ -111,6 +111,7 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
                     defaultSettingSuccess=true;
                     self._containElement=temp;
                     self._eventListenElement=temp;
+                    break;
                     // console.log("FIND");
                 }
                 temp=temp.parentElement;
@@ -169,7 +170,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
         this.cancelTouch();
     }
 };
- 
+
 TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
     var videoElement=this._videoElement;
     if(this.touchDownPt==null)
@@ -193,7 +194,7 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                         this.sweepDir=2;
                     else
                         this.sweepDir=1;
- 
+
                 }
                 // console.log("get sweep dir:"+this.sweepDir);
                 this.startTouchVideoTime=Math.floor(videoElement.currentTime);
@@ -225,14 +226,14 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
             videoElement.volume =this.touchResult;
             this.setToast(Math.floor(this.touchResult*100)+"%");
         }
- 
+
         //console.log("delx:"+delX);
     }else{
         this.cancelTouch();
     }
 };
- 
- 
+
+
 TouchGesture.VideoGesture.prototype.onTouchEnd=function(e){
     videoElement=this._videoElement;
     this.touchDownPt=null;
@@ -321,12 +322,12 @@ TouchGesture.VideoGesture.prototype.setToast=function(str){
     this._elementFrame.classList.remove("fadeout");
     this._toastText.innerHTML=str;
 }
- 
+
 TouchGesture.VideoGesture.prototype.cancelTouch=function(){
     this.touchDownPt=null;
     this.hideToast();
 }
- 
+
 TouchGesture.VideoGesture.prototype.hideToast=function(){
     var element=this._elementFrame;
     setTimeout(function(){
@@ -345,7 +346,7 @@ TouchGesture.VideoGesture.insertDom=function(dom){
         if (!videoTag.getAttribute('TouchGesture_Video')) {
           videoTag.setAttribute('TouchGesture_Video', true);
           new TouchGesture.VideoGesture(videoTag);
-          console.log("insert node");
+        //   console.log("insert node");
         }
     });
 };
@@ -389,7 +390,7 @@ function initForbidScrollList(){
     var defaultSetting=TouchGestureWhiteList[hostDomain];
     if(defaultSetting!=null){
         forbidScrollList=defaultSetting.forbidScrollList;
-        console.log(forbidScrollList);
+        // console.log(forbidScrollList);
     }
 }
 
@@ -416,17 +417,20 @@ function tg_IsFullscreen(){
         return;
     }
     initForbidScrollList();
-    document.addEventListener('touchmove', function(e){
-        // console.log(e.srcElement.classList[0]);
+    document.addEventListener('touchstart',function(e){
         if(e.srcElement.tagName!="VIDEO"&&forbidScrollList.indexOf(e.srcElement.classList[0])<0){
             TouchGesture.forbidScroll=false;
+        }else{
+            document.addEventListener('touchmove',preventDefault,{passive:false});
         }
-        if(TouchGesture.forbidScroll==true){
-            e.preventDefault();
-            return false;
-        }
-        return true;
-    },{ passive: false });
+    });
+    function preventDefault(e){
+        e.preventDefault();
+        return false;
+    };
+    document.addEventListener('touchend',function(e){
+        document.removeEventListener('touchmove',preventDefault);
+    });
 
     TouchGesture.VideoGesture.insertAll();
     setInterval(TouchGesture.VideoGesture.insertAll, 1500);
