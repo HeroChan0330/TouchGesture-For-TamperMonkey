@@ -22,6 +22,10 @@ var TouchGestureWhiteList={
     "www.youtube.com":{
         "html5-video-container":"ytd-player",
         forbidScrollList:["video-stream"]
+    },
+    "m.youtube.com":{
+        "html5-video-container":"player-container",
+        forbidScrollList:["animation-enabled"]
     }
 };
 var TouchGestureBlackList=[
@@ -131,7 +135,7 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
                 var temp=targetElement.parentElement;
                 var size1=targetElement.offsetWidth*targetElement.offsetHeight;
                 var size2=temp.offsetWidth*temp.offsetHeight;
-                if(temp.offsetWidth>=targetElement.offsetWidth&&temp.offsetHeight>=targetElement.offsetHeight&&size2/size1<=1.1){
+                if(temp.offsetWidth>=targetElement.offsetWidth&&temp.offsetHeight>=targetElement.offsetHeight&&size2/size1<=1.2){
                     targetElement=temp;
                 }else{
                     topest=true;
@@ -418,10 +422,33 @@ function tg_IsFullscreen(){
     }
     initForbidScrollList();
     document.addEventListener('touchstart',function(e){
-        if(e.srcElement.tagName!="VIDEO"&&forbidScrollList.indexOf(e.srcElement.classList[0])<0){
-            TouchGesture.forbidScroll=false;
-        }else{
+        // console.log(e);
+        // if(e.srcElement.tagName!="VIDEO"
+        //     &&forbidScrollList.indexOf(e.srcElement.classList[0])<0
+        //     &&!e.srcElement.classList.contains("TouchGestureForbidScroll")){
+        //     TouchGesture.forbidScroll=false;
+        // }else{
+        //     document.addEventListener('touchmove',preventDefault,{passive:false});
+        // }
+        if(forbidScrollList.indexOf(e.srcElement.classList[0])>=0){
             document.addEventListener('touchmove',preventDefault,{passive:false});
+        }else{
+            var noVideo=true;
+            for(var i=0;i<e.path.length;i++){
+                var element=e.path[i];
+                // console.log(element);
+                if(element.tagName=="VIDEO"||element.classList.contains["TouchGestureForbidScroll"]){
+                    TouchGesture.forbidScroll=true;
+                    noVideo=false;
+                    break;
+                }
+            }
+
+            if(!noVideo){
+                document.addEventListener('touchmove',preventDefault,{passive:false});
+            }else{
+                TouchGesture.forbidScroll=false;
+            }
         }
     });
     function preventDefault(e){
@@ -431,7 +458,9 @@ function tg_IsFullscreen(){
     document.addEventListener('touchend',function(e){
         document.removeEventListener('touchmove',preventDefault);
     });
-
+    // document.addEventListener('touchmove',function(e){
+    //     console.log(e.srcElement.classList[0]);
+    // });
     TouchGesture.VideoGesture.insertAll();
     setInterval(TouchGesture.VideoGesture.insertAll, 1500);
 })();
