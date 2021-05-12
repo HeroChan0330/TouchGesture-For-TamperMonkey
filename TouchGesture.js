@@ -67,6 +67,7 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     toastDiv.appendChild(toastText);
     toastDiv.classList.add("TouchGesture_Toast");
     toastText.classList.add("TouchGesture_ToastText");
+    
     toastDiv.style.display="none";
 
     this._elementFrame=toastDiv;
@@ -147,6 +148,7 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
             self._containElement=targetElement;
             self._eventListenElement=targetElement;
         }else{
+            // alert("FULLSCREEN!");
             if(document.fullscreenElement!=null){
                 self._containElement=document.fullscreenElement;
                 self._eventListenElement=document.fullscreenElement;
@@ -293,10 +295,10 @@ TouchGesture.VideoGesture.prototype.restoreDom=function(){
 TouchGesture.VideoGesture.prototype.fullScreenDetect=function(){
     var fullScreenState=tg_IsFullscreen();
     if(fullScreenState!=this._fullScreenNow){
+        this._fullScreenNow=fullScreenState;
         this.restoreDom();
         this.findBestRoot();
         this.applyDom();
-        this._fullScreenNow=fullScreenState;
     }
 };
 
@@ -304,7 +306,8 @@ TouchGesture.VideoGesture.prototype.setElementLayout=function(){
     var videoTarget=this._containElement;
     var vw=videoTarget.offsetWidth,vh=videoTarget.offsetHeight;
     var w=vw/5;
-    var h=vh/8;
+    //var h=vh/8;
+    var h=w/3;
     var x=(vw-w)/2+videoTarget.offsetLeft;
     var y=(vh-h)/2+videoTarget.offsetTop;
     // console.log("w:"+w," h:"+h+" x:"+x+" y:"+y);
@@ -414,8 +417,8 @@ function tg_IsFullscreen(){
 
 (function() {
     'use strict';
-    GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 999999;  top: 100px;  left: 200px;  background-color: black; } ');
-    GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; }  div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s;       -moz-transition: all 1.5s;       -ms-transition: all 1.5s;       -o-transition: all 1.5s;       transition: all 1.5s;       opacity: 0;      }');
+    GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 999999;  top: 100px;  left: 200px;  background-color: black; pointer-events:none;} ');
+    GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; pointer-events:none;}');
     GM_addStyle('div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
     if(whetherInBlackList()){
         return;
