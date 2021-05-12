@@ -166,7 +166,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     if(this._videoElement.src.length<=2){
         return;
     }
-    this.forbidScroll();
+    // this.forbidScroll();
     // console.log(e);
     this.setElementLayout();
     // console.log(e);
@@ -259,7 +259,7 @@ TouchGesture.VideoGesture.prototype.onTouchEnd=function(e){
         this.cancelTouch();
     }
     this.sweepDir=0;
-    this.permitcroll();
+    // this.permitcroll();
 };
 
 TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
@@ -364,21 +364,21 @@ TouchGesture.VideoGesture.insertAll=function(){
 
 };
 
-TouchGesture.VideoGesture.prototype.forbidScroll=function(){
-    // var bodies=document.getElementsByTagName("body");
-    // Array.prototype.forEach.call(bodies, function(body) {
-    //     body.style.position="fixed";
-    // });
-    TouchGesture.forbidScroll=true;
-}
+// TouchGesture.VideoGesture.prototype.forbidScroll=function(){
+//     // var bodies=document.getElementsByTagName("body");
+//     // Array.prototype.forEach.call(bodies, function(body) {
+//     //     body.style.position="fixed";
+//     // });
+//     TouchGesture.forbidScroll=true;
+// }
 
-TouchGesture.VideoGesture.prototype.permitcroll=function(){
-    // var bodies=document.getElementsByTagName("body");
-    // Array.prototype.forEach.call(bodies, function(body) {
-    //     body.style.position="relative";
-    // });
-    TouchGesture.forbidScroll=false;
-}
+// TouchGesture.VideoGesture.prototype.permitcroll=function(){
+//     // var bodies=document.getElementsByTagName("body");
+//     // Array.prototype.forEach.call(bodies, function(body) {
+//     //     body.style.position="relative";
+//     // });
+//     TouchGesture.forbidScroll=false;
+// }
 
 function seconds2TimeStr(secs){
     var hour=parseInt(secs/3600);
@@ -440,17 +440,25 @@ function tg_IsFullscreen(){
             for(var i=0;i<e.path.length;i++){
                 var element=e.path[i];
                 // console.log(element);
-                if(element.tagName=="VIDEO"||element.classList.contains["TouchGestureForbidScroll"]){
-                    TouchGesture.forbidScroll=true;
+                if(element.tagName=="VIDEO"||(element.classList&&element.classList.contains["TouchGestureForbidScroll"])){
+                    // TouchGesture.forbidScroll=true;
                     noVideo=false;
                     break;
                 }
             }
 
+            
             if(!noVideo){
                 document.addEventListener('touchmove',preventDefault,{passive:false});
-            }else{
-                TouchGesture.forbidScroll=false;
+            }else if(tg_IsFullscreen()){
+                if(e.touches[0].clientX>document.body.clientWidth/8&&e.touches[0].clientX<document.body.clientWidth){
+                    document.addEventListener('touchmove',preventDefault,{passive:false});
+                }else{
+                    // TouchGesture.forbidScroll=false;
+                }
+            }
+            else{
+                // TouchGesture.forbidScroll=false;
             }
         }
     });
