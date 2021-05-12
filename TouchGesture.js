@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.03
+// @version      2.05
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -42,8 +42,10 @@ TouchGesture.VideoGesture=function(videoElement){
     this.startTouchVideoTime;
     this.startTouchVideoVolume;
     this.touchResult=0;
-    this.bodyPosition="";
-
+    //this.bodyPosition="";
+    this.videoBrightness=1;
+    this.startTouchBrightness=1;
+    
     this._videoElement=videoElement;//对象video标签
     this._elementFrame=null;//文字显示的框架
     this._toastText=null; //文字显示
@@ -205,6 +207,7 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 // console.log("get sweep dir:"+this.sweepDir);
                 this.startTouchVideoTime=Math.floor(videoElement.currentTime);
                 this.startTouchVideoVolume=videoElement.volume;
+                this.startTouchBrightness=this.videoBrightness;
                 this.touchStartPt=touchPt;
             }
         }else if(this.sweepDir==3||this.sweepDir==4){
@@ -224,13 +227,25 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 this.setToast(seconds2TimeStr(this.startTouchVideoTime)+" "+this.touchResult+"s");
             // console.log(videoElement);
         }else if(this.sweepDir==1||this.sweepDir==2){
-            delY=touchPt.clientY-this.touchStartPt.clientY;
-            var plus=-delY/videoElement.offsetHeight*4;
-            this.touchResult=this.startTouchVideoVolume+plus;
-            if(this.touchResult<0) this.touchResult=0;
-            else if(this.touchResult>1) this.touchResult=1;
-            videoElement.volume =this.touchResult;
-            this.setToast(Math.floor(this.touchResult*100)+"%");
+            if(this.touchStartPt.clientX<document.body.clientWidth/2){
+                delY=touchPt.clientY-this.touchStartPt.clientY;
+                var plus=-delY/videoElement.offsetHeight*4;
+                this.touchResult=this.startTouchBrightness+plus;
+                if(this.touchResult<0) this.touchResult=0;
+                else if(this.touchResult>1) this.touchResult=1;
+                this.videoBrightness=this.touchResult;
+                var realBrightness=Math.sqrt(this.touchResult)*0.85+0.15;
+                videoElement.style.filter="brightness("+realBrightness+")";
+                this.setToast("Bri:"+Math.floor(this.touchResult*100)+"%");
+            }else{
+                delY=touchPt.clientY-this.touchStartPt.clientY;
+                var plus=-delY/videoElement.offsetHeight*4;
+                this.touchResult=this.startTouchVideoVolume+plus;
+                if(this.touchResult<0) this.touchResult=0;
+                else if(this.touchResult>1) this.touchResult=1;
+                videoElement.volume =this.touchResult;
+                this.setToast("Vol:"+Math.floor(this.touchResult*100)+"%");
+            }
         }
 
         //console.log("delx:"+delX);
