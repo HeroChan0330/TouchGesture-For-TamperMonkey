@@ -52,6 +52,7 @@ TouchGesture.VideoGesture=function(videoElement){
     this.startTouchBrightness=1;
     
     this._videoElement=videoElement;//对象video标签
+    this._videoElementAbLeft=0;
     this._elementFrame=null;//文字显示的框架
     this._toastText=null; //文字显示
     this._containElement=null; //_elementFrame的父级
@@ -179,6 +180,14 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     // console.log(e);
     if(e.touches.length==1){
         this.touchDownPt=e.touches[0];
+        var ableft=this._videoElement.offsetLeft;
+        var temp=this._videoElement.offsetParent;
+        while(temp!=null){
+            ableft+=temp.offsetLeft;
+            temp=temp.offsetParent;
+        }
+        this._videoElementAbLeft=ableft;
+        // console.log("ableft:"+ableft);
     }else{
         this.cancelTouch();
     }
@@ -232,7 +241,7 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 this.setToast(seconds2TimeStr(this.startTouchVideoTime)+" "+this.touchResult+"s");
             // console.log(videoElement);
         }else if(this.sweepDir==1||this.sweepDir==2){
-            if(this.touchStartPt.clientX<document.body.clientWidth/2){
+            if(this.touchStartPt.clientX-this._videoElementAbLeft<this._videoElement.clientWidth/2){
                 delY=touchPt.clientY-this.touchStartPt.clientY;
                 var plus=-delY/videoElement.offsetHeight*4;
                 this.touchResult=this.startTouchBrightness+plus;
