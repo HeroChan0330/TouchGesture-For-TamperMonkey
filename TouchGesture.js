@@ -26,7 +26,12 @@ var TouchGestureWhiteList={
     "m.youtube.com":{
         "html5-video-container":"player-container",
         forbidScrollList:["animation-enabled"]
+    },
+    "v.youku.com":{
+        "youku-film-player":"youku-film-player",
+        forbidScrollList:["yk-trigger-layer"]
     }
+
 };
 var TouchGestureBlackList=[
     "v.qq.com"
