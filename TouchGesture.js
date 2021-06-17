@@ -205,8 +205,8 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
             }else{
                 // 记录原本的播放速率，并且2倍速播放
                 this.originalPlayrate=this._videoElement.playbackRate;
-                this._videoElement.playbackRate=2.0;
-                this.setToast("2倍速播放");
+                this._videoElement.playbackRate=4.0;
+                this.setToast("4倍速播放");
             }
         }
         this.touchDownPt=e.touches[0];
