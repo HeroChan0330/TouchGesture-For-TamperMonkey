@@ -16,6 +16,9 @@ var TouchGestureWhiteList={
         "bilibili-player-video":"bilibili-player-area",
         forbidScrollList:["bilibili-player-dm-tip-wrap"]
     },
+    "m.bilibili.com":{
+        forbidScrollList:["player-mobile-display"]
+    },
     "weibo.com":{
         forbidScrollList:["wbpv-tech","wbpv-open-layer-button"]
     },
@@ -92,7 +95,7 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     this._touchEndHandler=this.onTouchEnd.bind(this);
     this._touchMoveHandler=this.onTouchMove.bind(this);
     this._windowResizeHandeler=this.fullScreenDetect.bind(this);
-    window.addEventListener("resize",this._windowResizeHandeler);
+    window.addEventListener("resize",this._windowResizeHandeler,"false");
 };
 
 // 找到显示元素最佳的parent及监听元素
@@ -196,7 +199,8 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     if(this.startTouchFingers>0){
         if(this.startTouchFingers==2){
             var dis=Math.sqrt((e.touches[0].clientX-e.touches[1].clientX)*(e.touches[0].clientX-e.touches[1].clientX)+(e.touches[0].clientY-e.touches[1].clientY)*(e.touches[0].clientY-e.touches[1].clientY));
-            if(dis>document.body.clientWidth/4){
+            var longside = (document.body.clientWidth>document.body.clientHeight)?document.body.clientWidth:document.body.clientHeight;
+            if(dis>longside/4){
                 // 两个触摸到相隔太远，取消触摸结果
                 this.touchDownPt=null;
                 this.startTouchFingers=0;
@@ -419,12 +423,20 @@ TouchGesture.VideoGesture.prototype.restoreDom=function(){
 
 // 窗口resize时检测是否全屏并且适配
 TouchGesture.VideoGesture.prototype.fullScreenDetect=function(){
+    // alert("resize");
     var fullScreenState=tg_IsFullscreen();
     if(fullScreenState!=this._fullScreenNow){
         this._fullScreenNow=fullScreenState;
         this.restoreDom();
         this.findBestRoot();
         this.applyDom();
+        if(fullScreenState == true){
+            // console.log("fullscreen");
+            this._elementFrame.style.position = "fixed";
+        }
+        else{
+            this._elementFrame.style.position = "absolute";
+        }
     }
 };
 
@@ -542,15 +554,16 @@ function whetherInBlackList(){
     return false;
 }
 function tg_IsFullscreen(){
-    return document.fullscreenElement    ||
-           document.msFullscreenElement  ||
-           document.mozFullScreenElement ||
-           document.webkitFullscreenElement || false;
+    return document.fullscreenElement!=null    ||
+           document.msFullscreenElement!=null  ||
+           document.mozFullScreenElement!=null ||
+           document.webkitFullscreenElement!=null ||
+           document.fullscreen == true || false;
 }
 
 (function() {
     'use strict';
-    GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 999999;  top: 100px;  left: 200px;  background-color: black; pointer-events:none;} ');
+    GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 2147483648;  top: 100px;  left: 200px;  background-color: black; pointer-events:none;} ');
     GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; pointer-events:none;}');
     GM_addStyle('div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
     if(whetherInBlackList()){
