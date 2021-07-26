@@ -33,6 +33,9 @@ var TouchGestureWhiteList={
     "v.youku.com":{
         "youku-film-player":"youku-film-player",
         forbidScrollList:["yk-trigger-layer"]
+    },
+    "www.facebook.com":{
+        forbidScrollList:["i09qtzwb"]
     }
 
 };
@@ -56,6 +59,7 @@ TouchGesture.VideoGesture=function(videoElement){
     this.videoBrightness=1;
     this.startTouchBrightness=1;
     
+    this._videoSrcStore=null;
     this._videoElement=videoElement;//对象video标签
     this._videoElementAbLeft=0; //video标签相对页面的left
     this._elementFrame=null;//文字显示的框架
@@ -71,6 +75,22 @@ TouchGesture.VideoGesture=function(videoElement){
     this.createDom();
     this.findBestRoot();
     this.applyDom();
+
+
+    // video内地址更改时，重新设置页面(针对bilibili连续播放)
+    var self = this;
+    this._videoElement.addEventListener('play', function () { //播放开始执行的函数
+        if(self._videoSrcStore == null){
+            // alert("first play");
+            self._videoSrcStore=self._videoElement.src;
+
+        }else if(self._videoElement.src!=self._videoSrcStore){
+            // alert("replay");
+            self.restoreDom();
+            self.findBestRoot();
+            self.applyDom();
+        }
+    });
 };
 
 // 产生显示元素
@@ -96,6 +116,8 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     this._touchMoveHandler=this.onTouchMove.bind(this);
     this._windowResizeHandeler=this.fullScreenDetect.bind(this);
     window.addEventListener("resize",this._windowResizeHandeler,"false");
+
+
 };
 
 // 找到显示元素最佳的parent及监听元素
@@ -314,6 +336,8 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 if(this.touchResult<0) this.touchResult=0;
                 else if(this.touchResult>1) this.touchResult=1;
                 videoElement.volume =this.touchResult;
+                if(videoElement.volume!=0)
+                    videoElement.muted=false;
                 this.setToast("音量:"+Math.floor(this.touchResult*100)+"%");
             }
         }
@@ -403,6 +427,8 @@ TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
     this._eventListenElement.addEventListener("touchstart",this._touchStartHandler,false);
     this._eventListenElement.addEventListener("touchend",this._touchEndHandler,false);
     this._eventListenElement.addEventListener("touchmove",this._touchMoveHandler,false);
+
+
 };
 
 // Resize时恢复元素原样，取消事件监听
@@ -411,9 +437,14 @@ TouchGesture.VideoGesture.prototype.restoreDom=function(){
 
     var temp=this._videoElement;
     while(temp!=this._eventListenElement){
-        temp.classList.remove("TouchGestureForbidScroll");
+        if(temp.classList!=null)
+            temp.classList.remove("TouchGestureForbidScroll");
         temp=temp.parentElement;
+        if(temp == null)
+            break;
     }
+    if(this._eventListenElement==null)
+        return;
     this._eventListenElement.classList.remove("TouchGestureForbidScroll");
 
     this._eventListenElement.removeEventListener("touchstart",this._touchStartHandler);
@@ -541,7 +572,8 @@ function initForbidScrollList(){
     var hostDomain=window.location.host;
     var defaultSetting=TouchGestureWhiteList[hostDomain];
     if(defaultSetting!=null){
-        forbidScrollList=defaultSetting.forbidScrollList;
+        if(defaultSetting.forbidScrollList!=null)
+            forbidScrollList=defaultSetting.forbidScrollList;
         // console.log(forbidScrollList);
     }
 }
