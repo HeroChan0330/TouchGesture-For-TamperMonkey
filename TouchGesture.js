@@ -199,6 +199,36 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
 
 // };
 
+TouchGesture.VideoGesture.prototype.simMouseMoveDock=function(){
+    if(this.touchDownPt==null)
+        return;
+    var self=this;
+    var event = new MouseEvent('mousemove', {
+        view: document.defaultView,
+        bubbles: true,
+        cancelable: false,
+        clientX:self._videoElement.clientWidth/2+Math.floor(Math.random()*20),
+        clientY:self._videoElement.clientHeight*1.5
+    });
+    self._videoElement.dispatchEvent(event);
+    setTimeout(() => {
+        self.simMouseMoveDock();
+    }, 1000);
+};
+
+
+TouchGesture.VideoGesture.prototype.simMouseMoveCenter=function(){
+    var self=this;
+    var event = new MouseEvent('mousemove', {
+        view: document.defaultView,
+        bubbles: true,
+        cancelable: false,
+        clientX:self._videoElement.clientWidth/2,
+        clientY:self._videoElement.clientHeight/2
+    });
+    self._videoElement.dispatchEvent(event);
+};
+
 // 触摸开始
 TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     if(this._videoElement.src.length<=2){
@@ -235,6 +265,16 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
                 this.setToast("4倍速播放");
             }
         }
+        else if(this.startTouchFingers==1){
+            var self = this;
+            setTimeout(() => {
+                if(self.touchDownPt != null && self.touchResult==0 && self.startTouchFingers==1){
+                    var str = seconds2TimeStr(Math.floor(self._videoElement.currentTime)) + " / " + seconds2TimeStr(Math.floor(self._videoElement.duration));
+                    self.setToast(str);
+                    self.simMouseMoveDock();
+                }
+            }, 500);
+        }
         this.touchDownPt=e.touches[0];
 
         var ableft=this._videoElement.offsetLeft;
@@ -252,6 +292,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
 };
 
 TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
+    // console.log(e);
     var videoElement=this._videoElement;
     if(this.touchDownPt==null)
         return;
@@ -336,8 +377,8 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 if(this.touchResult<0) this.touchResult=0;
                 else if(this.touchResult>1) this.touchResult=1;
                 videoElement.volume =this.touchResult;
-                if(videoElement.volume!=0)
-                    videoElement.muted=false;
+                // if(videoElement.volume!=0)
+                //    videoElement.muted=false;
                 this.setToast("音量:"+Math.floor(this.touchResult*100)+"%");
             }
         }
@@ -407,8 +448,10 @@ TouchGesture.VideoGesture.prototype.onTouchEnd=function(e){
 
     }
     this.sweepDir=0;
+    this.touchResult=0;
     this._videoElement.playbackRate=this.originalPlayrate;
     this.hideToast();
+    this.simMouseMoveCenter();
     // this.cancelTouch();
 
     // this.permitcroll();
@@ -464,6 +507,8 @@ TouchGesture.VideoGesture.prototype.fullScreenDetect=function(){
         if(fullScreenState == true){
             // console.log("fullscreen");
             this._elementFrame.style.position = "fixed";
+            this.simMouseMoveCenter();
+            //模拟鼠标移到中间，使得自动隐藏视频底部
         }
         else{
             this._elementFrame.style.position = "absolute";
