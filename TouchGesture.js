@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.10
+// @version      2.11
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -250,6 +250,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     // console.log(e);
     this.startTouchFingers=e.touches.length;
     if(this.startTouchFingers>0){
+        this.originalPlayrate=this._videoElement.playbackRate;
         if(this.startTouchFingers==2){
             var dis=Math.sqrt((e.touches[0].clientX-e.touches[1].clientX)*(e.touches[0].clientX-e.touches[1].clientX)+(e.touches[0].clientY-e.touches[1].clientY)*(e.touches[0].clientY-e.touches[1].clientY));
             var longside = (document.body.clientWidth>document.body.clientHeight)?document.body.clientWidth:document.body.clientHeight;
@@ -261,7 +262,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
                 return;
             }else{
                 // 记录原本的播放速率，并且2倍速播放
-                this.originalPlayrate=this._videoElement.playbackRate;
+                
                 this._videoElement.playbackRate=4.0;
                 this.setToast("4倍速播放");
             }
