@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.11
+// @version      2.12
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -32,7 +32,8 @@ var TouchGestureWhiteList={
     },
     "v.youku.com":{
         "youku-film-player":"youku-film-player",
-        forbidScrollList:["yk-trigger-layer"]
+        "video-layer":"youku-fullscreen",
+        forbidScrollList:["yk-trigger-layer","kui-dashboard-display-panel"]
     },
     "www.facebook.com":{
         forbidScrollList:["i09qtzwb"]
