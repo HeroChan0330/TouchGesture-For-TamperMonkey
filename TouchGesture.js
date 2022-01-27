@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.12
+// @version      2.13
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -40,6 +40,11 @@ var TouchGestureWhiteList={
     }
 
 };
+
+var CustomizedVideoTAG = {
+    "www.bilibili.com":["bwp-video"]
+};
+
 var TouchGestureBlackList=[
     "v.qq.com"
 ];
@@ -574,15 +579,32 @@ TouchGesture.VideoGesture.prototype.hideToast=function(){
 
 // 检测<video>并插入元素
 TouchGesture.VideoGesture.insertDom=function(dom){
-    var videoTags = dom.getElementsByTagName('video');
+    var videoTagsNative = dom.getElementsByTagName('video');
     // console.log(dom);
-    Array.prototype.forEach.call(videoTags, function(videoTag) {
+    Array.prototype.forEach.call(videoTagsNative, function(videoTag) {
         if (!videoTag.getAttribute('TouchGesture_Video')) {
-          videoTag.setAttribute('TouchGesture_Video', true);
-          new TouchGesture.VideoGesture(videoTag);
+            videoTag.setAttribute('TouchGesture_Video', true);
+            new TouchGesture.VideoGesture(videoTag);
         //   console.log("insert node");
         }
     });
+
+    var hostDomain=window.location.host;
+    if(CustomizedVideoTAG[hostDomain] == null)
+        return;
+
+    CustomizedVideoTAG[hostDomain].forEach(function(videoTagName){
+        var videoTags = dom.getElementsByTagName(videoTagName);
+        // console.log(dom);
+        Array.prototype.forEach.call(videoTags, function(videoTag) {
+            if (!videoTag.getAttribute('TouchGesture_Video')) {
+                videoTag.setAttribute('TouchGesture_Video', true);
+                new TouchGesture.VideoGesture(videoTag);
+            //   console.log("insert node");
+            }
+        });
+    });
+    
 };
 
 TouchGesture.VideoGesture.insertAll=function(){
