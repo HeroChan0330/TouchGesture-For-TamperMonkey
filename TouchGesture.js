@@ -78,6 +78,7 @@ TouchGesture.VideoGesture=function(videoElement){
     this._eventListenElement=null;//监听触摸动作的元素
 
     this._fullScreenNow=tg_IsFullscreen();
+    this._videoElement.style.filter = "brightness(1)";
     // console.log("_fullScreenNow:"+this._fullScreenNow);
 
     // console.log(TouchGestureWhiteList);
