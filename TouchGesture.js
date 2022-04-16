@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.14
+// @version      2.15
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -78,7 +78,8 @@ TouchGesture.VideoGesture=function(videoElement){
     this._eventListenElement=null;//监听触摸动作的元素
 
     this._fullScreenNow=tg_IsFullscreen();
-    this._videoElement.style.filter = "brightness(1)";
+    if(this._videoElement.style.filter=="" || this._videoElement.style.filter==null)
+        this._videoElement.style.filter = "brightness(1)";
     // console.log("_fullScreenNow:"+this._fullScreenNow);
 
     // console.log(TouchGestureWhiteList);
