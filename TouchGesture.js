@@ -32,8 +32,8 @@ var TouchGestureWhiteList={
     },
     "v.youku.com":{
         "youku-film-player":"youku-film-player",
-        "video-layer":"youku-fullscreen",
-        forbidScrollList:["yk-trigger-layer","kui-dashboard-display-panel"]
+        "video-layer":"youku-player",
+        forbidScrollList:["yk-trigger-layer","kui-dashboard-display-panel","kui-message-information"]
     },
     "www.facebook.com":{
         forbidScrollList:["i09qtzwb"]
