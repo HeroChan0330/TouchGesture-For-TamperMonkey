@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.15
+// @version      2.17
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -10,29 +10,84 @@
 // @grant        GM_addStyle
 // ==/UserScript==
 
-var TouchGesture={forbidScroll:false,orientationLocked:false,ismobile:false};
+var TouchGesture={forbidScroll:false,orientationLocked:false,ismobile:false,debug:false};
+/*
+*    WhiteList format
+*    function container(video_element){
+*       return [containe_lement,listen_element];
+*       return null;
+*   }
+*/
 var TouchGestureWhiteList={
     "www.bilibili.com":{
-        "bilibili-player-video":"bilibili-player-area",
+        container:function(video_element){
+            var parent = video_element.parentElement;
+            if(parent.classList.contains("bpx-player-video-wrap")){
+                var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
+                var listen_element = seekGrandParentByClass(root_element,"player-wrap");
+                return [root_element,listen_element];
+            }
+            return null;
+        },
         forbidScrollList:["bilibili-player-dm-tip-wrap"]
     },
     "m.bilibili.com":{
+        container:function(video_element){
+            var parent = video_element.parentElement;
+            if(parent.classList.contains("mplayer-video-wrap")){
+                var root_element = seekGrandParentByClass(parent,"mplayer");
+                return [root_element,root_element];
+            }
+            return null;
+        },
         forbidScrollList:["player-mobile-display","mplayer-display"]
     },
     "weibo.com":{
+        container:function(video_element){
+            return null;
+        },
         forbidScrollList:["wbpv-tech","wbpv-open-layer-button"]
     },
     "www.youtube.com":{
-        "html5-video-container":"ytd-player",
+        container:function(video_element){
+            var parent = video_element.parentElement;
+            if(parent.classList.contains("html5-video-container")){
+                var root_element = seekGrandParentByClass(parent,"ytd-player");
+                return [root_element,root_element];
+            }
+            return null;
+        },
         forbidScrollList:["video-stream"]
     },
     "m.youtube.com":{
-        "html5-video-container":"player-container",
+        container:function(video_element){
+            var parent = video_element.parentElement;
+            if(parent.classList.contains("html5-video-container")){
+                var root_element = seekGrandParentByClass(parent,"player-container");
+                var listen_element = null;
+                listen_element = root_element.getElementsByClassName("player-controls-background")[0];
+                if(listen_element==null){
+                    listen_element = video_element;
+                }
+                return [root_element,listen_element];
+            }
+            return null;
+        },
         forbidScrollList:["animation-enabled","player-controls-background"]
     },
     "v.youku.com":{
-        "youku-film-player":"youku-film-player",
-        "video-layer":"youku-player",
+        container:function(video_element){
+            var parent = video_element.parentElement;
+            if(parent.classList.contains("youku-film-player")){
+                var root_element = seekGrandParentByClass(parent,"youku-film-player");
+                return [root_element,root_element];
+            }
+            else if(parent.classList.contains("video-layer")){
+                var root_element = seekGrandParentByClass(parent,"youku-player");
+                return [root_element,root_element];
+            }
+            return null;
+        },
         forbidScrollList:["yk-trigger-layer","kui-dashboard-display-panel","kui-message-information"]
     },
     "www.facebook.com":{
@@ -49,6 +104,17 @@ var CustomizedVideoTAG = {
 var TouchGestureBlackList=[
     "v.qq.com"
 ];
+
+function seekGrandParentByClass(child,parentClass){
+    var temp = child;
+    while(temp!=null){
+        if(temp.classList!=null && temp.classList.contains(parentClass)){
+            return temp;
+        }
+        temp = temp.parentElement;
+    }
+    return null;
+}
 
 var forbidScrollList=[];
 
@@ -84,13 +150,15 @@ TouchGesture.VideoGesture=function(videoElement){
 
     // console.log(TouchGestureWhiteList);
     // console.log(TouchGestureWhiteList["www.bilibili.com"]!=null);
-    this.createDom();
-    this.findBestRoot();
-    this.applyDom();
+
+    var self = this;
+
+    self.createDom();
+    self.findBestRoot();
+    self.applyDom();    
 
 
     // video内地址更改时，重新设置页面(针对bilibili连续播放)
-    var self = this;
     this._videoElement.addEventListener('play', function () { //播放开始执行的函数
         if(self._videoSrcStore == null){
             // alert("first play");
@@ -165,40 +233,11 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(){
     var defaultSettingSuccess=false;
     if(defaultSetting!=null){
         // console.log("defaultSetting!=null");
-        var parentElement=this._videoElement.parentElement;
-        // console.log(parentElement);
-        var inList=false;
-        var targetFrameClass="";
-        //vertify whether the video parentelement`s classname is in the whitelist
-        if(parentElement.classList){
-            parentElement.classList.forEach(element => {
-                if(defaultSetting[element]!=null){
-                    targetFrameClass=defaultSetting[element];
-                    inList=true;
-                    // console.log(targetFrameClass+" INLIST");
-
-                    // break;
-                    return;
-                }
-            });
-        }
-        if(inList==true){
-            var finded=false;
-            var temp=parentElement;
-            while(finded==false){
-                if(temp.classList.contains(targetFrameClass)){
-                    finded=true;
-                    defaultSettingSuccess=true;
-                    self._containElement=temp;
-                    self._eventListenElement=temp;
-                    break;
-                    // console.log("FIND");
-                }
-                temp=temp.parentElement;
-                if(temp.tagName.toLowerCase()=="body"){
-                    break;
-                }
-            }
+        var ret = defaultSetting.container(this._videoElement);
+        if(ret!=null&&ret[0]!=null&&ret[1]!=null){
+            self._containElement=ret[0];
+            self._eventListenElement=ret[1];
+            defaultSettingSuccess = true;
         }
     }
 
@@ -505,9 +544,10 @@ TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
     this._containElement.appendChild(this._unlockBtn);
 
     var temp=this._videoElement;
-    while(temp!=this._eventListenElement){
-        temp.classList.add("TouchGestureForbidScroll");
-        temp=temp.parentElement;
+    while(temp!=this._eventListenElement && temp!=null){
+            if(temp.classList!=null)
+            temp.classList.add("TouchGestureForbidScroll");
+            temp=temp.parentElement;
     }
     this._eventListenElement.classList.add("TouchGestureForbidScroll");
 
@@ -520,7 +560,9 @@ TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
 
 // Resize时恢复元素原样，取消事件监听
 TouchGesture.VideoGesture.prototype.restoreDom=function(){
-    this._containElement.appendChild(this._elementFrame);
+    if(this._containElement!=null){
+        this._containElement.appendChild(this._elementFrame);
+    }
 
     var temp=this._videoElement;
     while(temp!=this._eventListenElement){
@@ -834,9 +876,11 @@ function tg_IsMobile(){
     document.addEventListener('touchend',function(e){
         document.removeEventListener('touchmove',preventDefault);
     });
-    // document.addEventListener('touchmove',function(e){
-    //     console.log(e.srcElement.classList[0]);
-    // });
+    if(TouchGesture.debug == true){
+        document.addEventListener('touchmove',function(e){
+            console.log(e.srcElement.classList);
+        });
+    }
     TouchGesture.VideoGesture.insertAll();
-    setInterval(TouchGesture.VideoGesture.insertAll, 1500);
+    setInterval(TouchGesture.VideoGesture.insertAll, 2000);
 })();
