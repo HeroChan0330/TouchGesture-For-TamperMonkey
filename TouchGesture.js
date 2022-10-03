@@ -103,8 +103,8 @@ var TouchGestureWhiteList={
                 ytFindListenElement();
                 function ytFindListenElement(){
                     listen_element = root_element.getElementsByClassName("player-controls-background")[0];
-                    console.log(root_element);
-                    console.log(listen_element);
+                    // console.log(root_element);
+                    // console.log(listen_element);
                     if(listen_element==null){
                         setTimeout(() => {
                             ytFindListenElement();
@@ -112,7 +112,7 @@ var TouchGestureWhiteList={
                     }
                     else{
                         callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
-                        console.log("callback!");
+                        // console.log("callback!");
                     }
                 }
 
