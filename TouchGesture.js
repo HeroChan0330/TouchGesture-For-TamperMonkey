@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.18
+// @version      2.19
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -31,10 +31,18 @@ var TouchGestureWhiteList={
         container:function(video_element,callback){
             var parent = video_element.parentElement;
             if(parent.classList.contains("bpx-player-video-wrap")){
-                var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
-                var listen_element = seekGrandParentByClass(root_element,"player-wrap");
-                // return [root_element,listen_element];
-                callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                if(tg_IsFullscreen()){
+                    var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
+                    var listen_element = seekGrandParentByClass(root_element,"video-container-v1");
+                    // return [root_element,listen_element];
+                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                }
+                else{
+                    var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
+                    var listen_element = seekGrandParentByClass(root_element,"player-wrap");
+                    // return [root_element,listen_element];
+                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                }
             }
             else{
                 // return null;
@@ -960,7 +968,7 @@ function tg_IsMobile(){
             for(var i=0;i<e.path.length;i++){
                 var element=e.path[i];
                 // console.log(element);
-                if(element.tagName=="VIDEO"||(element.classList&&element.classList.contains["TouchGestureForbidScroll"])){
+                if(element.tagName=="VIDEO"||(element.classList&&element.classList.contains("TouchGestureForbidScroll"))){
                     // TouchGesture.forbidScroll=true;
                     noVideo=false;
                     break;
