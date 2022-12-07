@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.19
+// @version      2.20
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -31,7 +31,7 @@ var TouchGestureWhiteList={
         container:function(video_element,callback){
             var parent = video_element.parentElement;
             if(parent.classList.contains("bpx-player-video-wrap")){
-                if(tg_IsFullscreen()){
+                if(tg_IsFullscreen()==true){
                     var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
                     var listen_element = seekGrandParentByClass(root_element,"video-container-v1");
                     // return [root_element,listen_element];
@@ -429,7 +429,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     }
     // this.forbidScroll();
     // console.log(e);
-    this.setElementLayout();
+    this.setElementLayout("middle");
     // console.log(e);
     this.startTouchFingers=e.touches.length;
     if(this.startTouchFingers>0){
@@ -447,7 +447,9 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
                 // 记录原本的播放速率，并且4倍速播放
                 if(this._options.speed==true){
                     this._videoElement.playbackRate=4.0;
-                    this.setToast("4倍速播放");
+                    this.setElementLayout("top");
+                    this.setToast('4倍速播放<b>>>></b>');
+                    this._toastText.classList.add("toast_blink");
                 }
             }
         }
@@ -465,6 +467,10 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
             }
         }
         this.touchDownPt=e.touches[0];
+        var tor = window.screen.height/10;
+        if(TouchGesture.ismobile == true && this._fullScreenNow == true && (this.touchDownPt.pageY < tor || this.touchDownPt.pageY > window.screen.height-tor)){
+            this.cancelTouch(); // 移动端边缘上滑、下滑判定
+        }
 
         var ableft=this._videoElement.offsetLeft;
         var temp=this._videoElement.offsetParent;
@@ -520,13 +526,18 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
         }else if(this._options.progress==true && (this.sweepDir==3||this.sweepDir==4)){
             delX=touchPt.clientX-this.touchStartPt.clientX;
             var delXRatio=delX/videoElement.offsetWidth;
+            // console.log(delXRatio);
+            var duration = this._videoElement.duration;
+            if(isNaN(duration)==true){
+                duration = 1800;
+            }
             if(Math.abs(delXRatio)<0.5){
-                this.touchResult=Math.floor(delXRatio*180);
+                this.touchResult=Math.floor(delXRatio*240);
             }else{
                 if(delXRatio>0)
-                    this.touchResult=Math.floor((Math.pow(100,delXRatio-0.5)-1)*180+90);
+                    this.touchResult=Math.floor((Math.pow(10000,delXRatio-0.5)-1)/50*duration+delXRatio*240);
                 else
-                this.touchResult=Math.floor(-(Math.pow(100,-delXRatio-0.5)-1)*180-90);
+                    this.touchResult=Math.floor(-(Math.pow(10000,-delXRatio-0.5)-1)/50*duration+delXRatio*240);
                 //this.touchResult=Math.floor(Math.pow(2*delX/videoElement.offsetWidth,3)*120);
             }
             if(this.touchResult+this.startTouchVideoTime<0)
@@ -538,10 +549,18 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                 this.touchResult=0;
             }
             var offsetValStr;
-            if(Math.abs(this.touchResult)<300)
+            if(Math.abs(this.touchResult)<60)
                 offsetValStr=this.touchResult+"s";
-            else
-                offsetValStr=Math.floor(this.touchResult/6)/10+"min";
+            else{
+                if(this.touchResult>0){
+                    var sec = this.touchResult%60;
+                    offsetValStr=Math.floor(this.touchResult/60)+":"+(sec < 10? '0' + sec : sec);
+                }
+                else{
+                    var sec = (-this.touchResult)%60;
+                    offsetValStr="-"+Math.floor(-this.touchResult/60)+":"+(sec < 10? '0' + sec : sec);
+                }
+            }
 
             if(this.touchResult>0)
                 this.setToast(seconds2TimeStr(this.startTouchVideoTime)+" +"+offsetValStr);
@@ -765,14 +784,22 @@ TouchGesture.VideoGesture.prototype.videoInFullscreenElement=function(){
 };
 
 //自动调节DIV元素位置
-TouchGesture.VideoGesture.prototype.setElementLayout=function(){
+TouchGesture.VideoGesture.prototype.setElementLayout=function(pos){
     var videoTarget=this._containElement;
     var vw=videoTarget.offsetWidth,vh=videoTarget.offsetHeight;
     var w=vw/5;
     //var h=vh/8;
     var h=w/3;
     var x=(vw-w)/2+videoTarget.offsetLeft;
-    var y=(vh-h)/2+videoTarget.offsetTop;
+    var y;
+    if(pos == "bottom"){
+        y= vh*4/5-h/2+videoTarget.offsetTop;
+    }else if(pos == "top"){
+        y= vh*1/5-h/2+videoTarget.offsetTop;
+    }
+    else{
+        y= vh/2-h/2+videoTarget.offsetTop;
+    }
     // console.log("w:"+w," h:"+h+" x:"+x+" y:"+y);
     this._elementFrame.style.width=w+"px";
     this._elementFrame.style.height=h+"px";
@@ -825,9 +852,10 @@ TouchGesture.VideoGesture.prototype.cancelTouch=function(){
 
 // 隐藏toast
 TouchGesture.VideoGesture.prototype.hideToast=function(){
-    var element=this._elementFrame;
+    var self = this;
     setTimeout(function(){
-        element.classList.add("fadeout");
+        self._elementFrame.classList.add("fadeout");
+        self._toastText.classList.remove("toast_blink");
     },500);
     // setTimeout(function(){
     //     element.style.opacity=0;
@@ -941,7 +969,9 @@ function tg_IsMobile(){
     GM_addStyle('div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
     GM_addStyle('div.TouchGesture_UnlockBtn{opacity: 0.75; position: fixed; z-index: 2147483648; width: 50px;height: 50px;text-align: center;font-size: 25;margin: 20;background-color: black;color: white;}');
     GM_addStyle('div.TouchGesture_UnlockBtn.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
-    
+    GM_addStyle('@media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) { .toast_blink {background: -webkit-gradient( linear, left top, right top, color-stop(0, #000000), color-stop(0.5, #ffffff),color-stop(1,#000000) );-webkit-text-fill-color: transparent;-webkit-background-clip: text;-webkit-background-size: 200% 100%;-webkit-animation: toast_blink_animation 1s infinite linear;}}');
+    GM_addStyle('@-webkit-keyframes toast_blink_animation {0%  { background-position: 150% 0;}100% { background-position: -50% 0;}}');
+
     if(whetherInBlackList()){
         return;
     }
@@ -978,8 +1008,8 @@ function tg_IsMobile(){
             
             if(!noVideo){
                 document.addEventListener('touchmove',preventDefault,{passive:false});
-            }else if(tg_IsFullscreen()){
-                if(e.touches[0].clientX>document.body.clientWidth/8&&e.touches[0].clientX<document.body.clientWidth){
+            }else if(tg_IsFullscreen()==true){
+                if(e.touches[0].pageX>window.screen.width/8&&e.touches[0].pageX<window.screen.width){
                     document.addEventListener('touchmove',preventDefault,{passive:false});
                 }else{
                     // TouchGesture.forbidScroll=false;
