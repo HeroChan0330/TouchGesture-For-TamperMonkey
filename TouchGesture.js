@@ -1,30 +1,48 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.20
+// @version      2.21
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
 // @match        http://*/*
 // @match        ftp://*/*
 // @grant        GM_addStyle
+// @grant        GM_setValue  
+// @grant        GM_getValue  
 // ==/UserScript==
 
-// 全局手势开关:音量 亮度 进度 倍速 状态
-var TouchGestureGlobalOptions = {volume:true,brightness:true,progress:true,speed:true,state:true};
+var TGUserDefaultSetting = {
+    global : {
+        gSwitchState:true,
+        gSwitchProgress:true,
+        gSwitchBrightness:true,
+        gSwitchVolume:true,
+        gSwitchSpeedX4:true,
+        gSwitchSpeed:true,
+        gSwitchSpeedX4Sigle:false,
+        gSelectToastPos:"middle"
+    },
+    website :{
+
+    }
+};
+var TGUserSetting;
+
 // 黑名单
 var TouchGestureBlackList=[
-
+    
 ];
 
 var TouchGesture={forbidScroll:false,orientationLocked:false,ismobile:false,debug:false};
+var TouchGestureSetting = {volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true};
 /*
 *    WhiteList format
 *    function container(video_element){
 *       callback(root_element,listen_element，options);
 *       callback(null,null,options);
 *   }
-*   options = {volume:true,brightness:true,progress:true,speed:true,state:true}
+*   options = {volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true}
 */
 var TouchGestureWhiteList={
     "www.bilibili.com":{
@@ -35,18 +53,18 @@ var TouchGestureWhiteList={
                     var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
                     var listen_element = seekGrandParentByClass(root_element,"video-container-v1");
                     // return [root_element,listen_element];
-                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
                 }
                 else{
                     var root_element = seekGrandParentByClass(parent,"bpx-player-video-area");
                     var listen_element = seekGrandParentByClass(root_element,"player-wrap");
                     // return [root_element,listen_element];
-                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                    callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
                 }
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["bilibili-player-dm-tip-wrap"]
@@ -57,11 +75,11 @@ var TouchGestureWhiteList={
             if(parent.classList.contains("mplayer-video-wrap")){
                 var root_element = seekGrandParentByClass(parent,"mplayer");
                 // return [root_element,listen_element];
-                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["player-mobile-display","mplayer-display"]
@@ -69,7 +87,7 @@ var TouchGestureWhiteList={
     "weibo.com":{
         container:function(video_element,callback){
             // return null;
-            callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+            callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
         },
         forbidScrollList:["wbpv-tech","wbpv-open-layer-button"]
     },
@@ -93,11 +111,11 @@ var TouchGestureWhiteList={
                 // }
                 var root_element = seekGrandParentByClass(parent,"ytd-player");
                 // return [root_element,listen_element];
-                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["video-stream","ytd-watch-flexy"]
@@ -119,7 +137,7 @@ var TouchGestureWhiteList={
                         }, 500);
                     }
                     else{
-                        callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                        callback(root_element,listen_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
                         // console.log("callback!");
                     }
                 }
@@ -127,7 +145,7 @@ var TouchGestureWhiteList={
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["animation-enabled","player-controls-background"]
@@ -138,16 +156,16 @@ var TouchGestureWhiteList={
             if(parent.classList.contains("youku-film-player")){
                 var root_element = seekGrandParentByClass(parent,"youku-film-player");
                 // return [root_element,listen_element];
-                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
             else if(parent.classList.contains("video-layer")){
                 var root_element = seekGrandParentByClass(parent,"youku-player");
                 // return [root_element,listen_element];
-                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["yk-trigger-layer","kui-dashboard-display-panel","kui-message-information"]
@@ -155,7 +173,7 @@ var TouchGestureWhiteList={
     "www.facebook.com":{
         container:function(video_element,callback){
             // return null;
-            callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+            callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
         },
         forbidScrollList:["i09qtzwb"]
     },
@@ -165,11 +183,11 @@ var TouchGestureWhiteList={
             if(parent.classList.contains("txp_video_container")){
                 var root_element = seekGrandParentByClass(parent,"txp_player");
                 // return [root_element,listen_element];
-                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(root_element,root_element,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
             else{
                 // return null;
-                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,state:true});
+                callback(null,null,{volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true});
             }
         },
         forbidScrollList:["txp_shadow","plugin_ctrl_txp_shadow"]
@@ -199,6 +217,7 @@ var forbidScrollList=[];
 
 TouchGesture.VideoGesture=function(videoElement){
     this.touchDownPt=null; //触摸按下时得位置
+    this.touchDownTime = 0;
     this.touchStartPt=null; //顺着一定方向滑动时并触发功能，开始计算的点
     
     this.sweepDir=0; //0:no sweep 1:up 2:down 3:left 4:right
@@ -218,11 +237,13 @@ TouchGesture.VideoGesture=function(videoElement){
     this._elementFrame=null;//文字显示的框架
     this._toastText=null; //文字显示
     this._unlockBtn = null; //解锁按钮
+    this._settingBtn = null; // 设置按钮
 
     this._containElement=null; //_elementFrame的父级
     this._eventListenElement=null;//监听触摸动作的元素
 
-    this._options = TouchGestureGlobalOptions;
+    this._options = TouchGestureSetting;
+    this._contextMenuFunc = document.oncontextmenu;
 
     this._fullScreenNow=tg_IsFullscreen();
     if(this._videoElement.style.filter=="" || this._videoElement.style.filter==null)
@@ -258,10 +279,14 @@ TouchGesture.VideoGesture=function(videoElement){
 
 
 
-    // this._videoElement.addEventListener('canplay', function () {
-    //     self._videoWidth = this.videoWidth;
-    //     self._videoHeight = this.videoHeight;
-    // });
+    this._videoElement.addEventListener('play', function () {
+        self._settingBtn.style.display = "none";
+    });
+
+    this._videoElement.addEventListener('pause', function () {
+        self._settingBtn.style.display = "block";
+        self.setSettingBtnLayout();
+    });
 
 };
 
@@ -271,23 +296,32 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     var toastDiv=document.createElement("div");
     var toastText=document.createElement("span");
     var unlockBtn = document.createElement("div");
+    var settingBtn = document.createElement("div");
 
     toastDiv.appendChild(toastText);
     toastDiv.classList.add("TouchGesture_Toast");
     toastText.classList.add("TouchGesture_ToastText");
-    unlockBtn.classList.add("TouchGesture_UnlockBtn");
+    unlockBtn.classList.add("TouchGesture_Btn");
+    settingBtn.classList.add("TouchGesture_Btn");
     
     toastDiv.style.display="none";
     unlockBtn.style.display="none";
+    unlockBtn.style.position="fixed";
     unlockBtn.innerHTML = "&#128274;";
+
+    settingBtn.style.display = "none";
+    settingBtn.style.position="absolute";
+    settingBtn.innerHTML = "&#9881;";
     
     this._elementFrame=toastDiv;
     this._toastText=toastText;
     this._unlockBtn = unlockBtn;
+    this._settingBtn = settingBtn;
 
     this._elementFrame.classList.add("TouchGestureForbidScroll");
     this._toastText.classList.add("TouchGestureForbidScroll");
     this._unlockBtn.classList.add("TouchGestureForbidScroll");
+    this._settingBtn.classList.add("TouchGestureForbidScroll");
 
     this._touchStartHandler=this.onTouchStart.bind(this);
     this._touchEndHandler=this.onTouchEnd.bind(this);
@@ -302,6 +336,15 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
         // console.log("unlock cancel");
         screen.orientation.unlock();
         event.stopPropagation();
+    };
+
+    this._settingBtn.onclick=function(event){
+        // alert("setting clicked");
+        var domain = window.location.host;
+        var url = "https://herochansysu.gitlab.io/touchgesturesetting/index.html?target="+domain;
+        // var url = "http://127.0.0.1:8848/TouchGestureSetting/index.html?target="+domain;
+        // window.parent.open(url);
+         window.parent.location.href = url;
     };
 
     this._unlockBtn.addEventListener("transitionend",function(){
@@ -330,7 +373,7 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(callback){
             }
             if(options!=null){
                 for(var key in self._options){
-                    self._options[key] = TouchGestureGlobalOptions[key] && options[key];
+                    self._options[key] = TouchGestureSetting[key] && options[key];
                 }
             }
             callback(self._containElement,self._eventListenElement);
@@ -429,7 +472,7 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
     }
     // this.forbidScroll();
     // console.log(e);
-    this.setElementLayout("middle");
+    this.setElementLayout(TGUserSetting.global.gSelectToastPos);
     // console.log(e);
     this.startTouchFingers=e.touches.length;
     if(this.startTouchFingers>0){
@@ -445,9 +488,9 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
                 return;
             }else{
                 // 记录原本的播放速率，并且4倍速播放
-                if(this._options.speed==true){
+                this.setElementLayout("top");
+                if(this._options.speedx4==true){
                     this._videoElement.playbackRate=4.0;
-                    this.setElementLayout("top");
                     this.setToast('4倍速播放<b>>>></b>');
                     this._toastText.classList.add("toast_blink");
                 }
@@ -455,18 +498,38 @@ TouchGesture.VideoGesture.prototype.onTouchStart=function(e){
         }
         else if(this.startTouchFingers==1){
             var self = this;
-            if(this._options.state==true){
+            if(this._options.speedx4==true && this._options.speedx4single==true){
                 setTimeout(() => {
-                    if(self.touchDownPt != null && self.touchResult==0 && self.startTouchFingers==1){
+                    var dt = new Date();
+                    var elipse = dt.getTime() - self.touchDownTime;
+                    if(elipse > 400 && self.touchDownPt != null && self.sweepDir==0 && self.startTouchFingers==1){
+                        self.setElementLayout("top");
+                        self._videoElement.playbackRate=4.0;
+                        self.setToast('4倍速播放<b>>>></b>');
+                        self._toastText.classList.add("toast_blink");
+                        // document.addEventListener('contextmenu',tgPreventDefault);
+                        self._contextMenuFunc = document.oncontextmenu;
+                        document.oncontextmenu = function(){e.preventDefault();return false;}
+                        self.sweepDir=-1;
+                    }
+                }, 500);
+            }else if(this._options.state==true){
+                setTimeout(() => {
+                    var dt = new Date();
+                    var elipse = dt.getTime() - self.touchDownTime;
+                    if(elipse > 400 && self.touchDownPt != null && self.touchResult==0 && self.startTouchFingers==1){
                         var str = seconds2TimeStr(Math.floor(self._videoElement.currentTime)) + " / " + seconds2TimeStr(Math.floor(self._videoElement.duration));
                         self.setToast(str);
                         self.simMouseMoveDock();
                         self.longTouch=true;
+                        
                     }
                 }, 500);
             }
         }
         this.touchDownPt=e.touches[0];
+        var dt = new Date();
+        this.touchDownTime = dt.getTime();
         var tor = window.screen.height/10;
         if(TouchGesture.ismobile == true && this._fullScreenNow == true && (this.touchDownPt.pageY < tor || this.touchDownPt.pageY > window.screen.height-tor)){
             this.cancelTouch(); // 移动端边缘上滑、下滑判定
@@ -578,7 +641,7 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                     this.videoBrightness=this.touchResult;
                     var realBrightness=Math.sqrt(this.touchResult)*0.85+0.15;
                     videoElement.style.filter="brightness("+realBrightness+")";
-                    this.setToast("亮度:"+Math.floor(this.touchResult*100)+"%");
+                    this.setToast("&#x2600;&nbsp;"+Math.floor(this.touchResult*100)+"%");
                 }
             }else{
                 if(this._options.volume==true){
@@ -590,7 +653,7 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                     videoElement.volume =this.touchResult;
                     // if(videoElement.volume!=0)
                     //    videoElement.muted=false;
-                    this.setToast("音量:"+Math.floor(this.touchResult*100)+"%");
+                    this.setToast("&#x266b;&nbsp;"+Math.floor(this.touchResult*100)+"%");
                 }
             }
         }
@@ -672,6 +735,9 @@ TouchGesture.VideoGesture.prototype.onTouchEnd=function(e){
     if(this.longTouch==true)
         this.simMouseMoveCenter();
     this.longTouch=false;
+    if(this._options.speedx4==true && this._options.speedx4single==true)
+        document.oncontextmenu = this._contextMenuFunc;
+
     // this.cancelTouch();
 
     // this.permitcroll();
@@ -679,6 +745,11 @@ TouchGesture.VideoGesture.prototype.onTouchEnd=function(e){
 
 // 启动监听
 TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
+    this._containElement.appendChild(this._settingBtn);
+    var hostDomain=window.location.host;
+    if(TGUserSetting.website[hostDomain]!=null && TGUserSetting.website[hostDomain]["wSwitchEnable"]==false){ //用户设置该网站上不可用，不监听手势
+        return;
+    }
     this._containElement.appendChild(this._elementFrame);
     this._containElement.appendChild(this._unlockBtn);
 
@@ -725,6 +796,8 @@ TouchGesture.VideoGesture.prototype.fullScreenDetect=function(){
     // alert("resize");
     var self = this;
     this.setUnlockBtnLayout(); 
+    this.setSettingBtnLayout();
+
     var fullScreenState=tg_IsFullscreen();
     if(fullScreenState!=this._fullScreenNow){
         this._fullScreenNow=fullScreenState;
@@ -793,9 +866,9 @@ TouchGesture.VideoGesture.prototype.setElementLayout=function(pos){
     var x=(vw-w)/2+videoTarget.offsetLeft;
     var y;
     if(pos == "bottom"){
-        y= vh*4/5-h/2+videoTarget.offsetTop;
+        y= vh*7/8-h/2+videoTarget.offsetTop;
     }else if(pos == "top"){
-        y= vh*1/5-h/2+videoTarget.offsetTop;
+        y= vh*1/8-h/2+videoTarget.offsetTop;
     }
     else{
         y= vh/2-h/2+videoTarget.offsetTop;
@@ -833,6 +906,28 @@ TouchGesture.VideoGesture.prototype.setUnlockBtnLayout=function(){
     // this._unlockBtn.style.display = "block";
     // this._unlockBtn.classList.remove("fadeout");
 }
+
+TouchGesture.VideoGesture.prototype.setSettingBtnLayout=function(){
+    var videoTarget=this._containElement;
+    var vw=videoTarget.offsetWidth,vh=videoTarget.offsetHeight;
+    var w = vh/8;
+    var h = vh/8;
+    var x= vw - w - vw/12;
+    var y=(vh-h)/2;
+    if(vw/window.screen.width<0.3){
+        this._settingBtn.style.display = "none"; // 隐藏小视频的设置按钮
+    }else{
+        this._settingBtn.style.fontSize=w/2+"px";
+        this._settingBtn.style.width=w+"px";
+        this._settingBtn.style.height=h+"px";
+        this._settingBtn.style.lineHeight = h+"px";
+        this._settingBtn.style.left=x+"px";
+        this._settingBtn.style.top=y+"px";
+        this._settingBtn.style.borderRadius = w/2+"px";
+    }
+
+}
+
 
 //显示Toast
 TouchGesture.VideoGesture.prototype.setToast=function(str){
@@ -962,19 +1057,36 @@ function tg_IsMobile(){
     }
 }
 
-(function() {
-    'use strict';
+function tgVideoPageInit(){
     GM_addStyle('div.TouchGesture_Toast{  width: 200px;  height: 100px;  opacity: 0.75;  position: absolute;  z-index: 2147483648;  top: 100px;  left: 200px;  background-color: black; pointer-events:none;} ');
-    GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; pointer-events:none;}');
+    GM_addStyle('span.TouchGesture_ToastText{  position: absolute;  left: 0;  right: 0;  text-align: center;  color: white; pointer-events:none; font-family:-apple-system,BlinkMacSystemFont,Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;}');
     GM_addStyle('div.TouchGesture_Toast.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
-    GM_addStyle('div.TouchGesture_UnlockBtn{opacity: 0.75; position: fixed; z-index: 2147483648; width: 50px;height: 50px;text-align: center;font-size: 25;margin: 20;background-color: black;color: white;}');
-    GM_addStyle('div.TouchGesture_UnlockBtn.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
+    GM_addStyle('div.TouchGesture_Btn{opacity: 0.75; z-index: 2147483648; width: 50px;height: 50px;text-align: center;font-size: 25;margin: 20;background-color: black;color: white; font-family:apple color emoji,segoe ui emoji,noto color emoji,android emoji,emojisymbols,emojione mozilla,twemoji mozilla,segoe ui symbol;}');
+    GM_addStyle('div.TouchGesture_Btn.fadeout{  -webkit-transition: all 1.5s; -moz-transition: all 1.5s; -ms-transition: all 1.5s; -o-transition: all 1.5s; transition: all 1.5s; opacity: 0;}');
     GM_addStyle('@media all and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) { .toast_blink {background: -webkit-gradient( linear, left top, right top, color-stop(0, #000000), color-stop(0.5, #ffffff),color-stop(1,#000000) );-webkit-text-fill-color: transparent;-webkit-background-clip: text;-webkit-background-size: 200% 100%;-webkit-animation: toast_blink_animation 1s infinite linear;}}');
     GM_addStyle('@-webkit-keyframes toast_blink_animation {0%  { background-position: 150% 0;}100% { background-position: -50% 0;}}');
 
-    if(whetherInBlackList()){
-        return;
+    var hostDomain = window.location.host;
+    var glbSetting = TGUserSetting.global;
+    var usrSetting = TGUserSetting.website[hostDomain];
+    var glb = [glbSetting["gSwitchVolume"],glbSetting["gSwitchBrightness"],glbSetting["gSwitchProgress"],glbSetting["gSwitchSpeed"],glbSetting["gSwitchSpeedX4"],glbSetting["gSwitchState"],glbSetting["gSwitchSpeedX4Sigle"]];
+    var usr = [true,true,true,true,true,true,true];
+    // console.log(hostDomain);
+    if(usrSetting!=null){
+        usr = [usrSetting["wSwitchVolume"],usrSetting["wSwitchBrightness"],usrSetting["wSwitchProgress"],usrSetting["wSwitchSpeed"],usrSetting["wSwitchSpeedX4"],usrSetting["wSwitchState"],usrSetting["wSwitchSpeedX4Sigle"]];
+        // console.log("usr setting exist");
     }
+    
+    TouchGestureSetting["volume"] =  glb[0] && usr[0];
+    TouchGestureSetting["brightness"] =  glb[1] && usr[1];
+    TouchGestureSetting["progress"] =  glb[2] && usr[2];
+    TouchGestureSetting["speed"] =  glb[3] && usr[3];
+    TouchGestureSetting["speedx4"] =  glb[4] && usr[4];
+    TouchGestureSetting["state"] =  glb[5] && usr[5];
+    TouchGestureSetting["speedx4single"] =  glb[6] && usr[6];
+    // console.log(glb);
+    // console.log(usr);
+
     initForbidScrollList();
 
     TouchGesture.ismobile = tg_IsMobile();
@@ -983,16 +1095,8 @@ function tg_IsMobile(){
     });
 
     document.addEventListener('touchstart',function(e){
-        // console.log(e);
-        // if(e.srcElement.tagName!="VIDEO"
-        //     &&forbidScrollList.indexOf(e.srcElement.classList[0])<0
-        //     &&!e.srcElement.classList.contains("TouchGestureForbidScroll")){
-        //     TouchGesture.forbidScroll=false;
-        // }else{
-        //     document.addEventListener('touchmove',preventDefault,{passive:false});
-        // }
         if(forbidScrollList.indexOf(e.srcElement.classList[0])>=0){
-            document.addEventListener('touchmove',preventDefault,{passive:false});
+            document.addEventListener('touchmove',tgPreventDefault,{passive:false});
         }else{
             var noVideo=true;
             for(var i=0;i<e.path.length;i++){
@@ -1007,25 +1111,20 @@ function tg_IsMobile(){
 
             
             if(!noVideo){
-                document.addEventListener('touchmove',preventDefault,{passive:false});
+                document.addEventListener('touchmove',tgPreventDefault,{passive:false});
             }else if(tg_IsFullscreen()==true){
                 if(e.touches[0].pageX>window.screen.width/8&&e.touches[0].pageX<window.screen.width){
-                    document.addEventListener('touchmove',preventDefault,{passive:false});
+                    document.addEventListener('touchmove',tgPreventDefault,{passive:false});
                 }else{
-                    // TouchGesture.forbidScroll=false;
                 }
             }
             else{
-                // TouchGesture.forbidScroll=false;
             }
         }
     });
-    function preventDefault(e){
-        e.preventDefault();
-        return false;
-    };
+
     document.addEventListener('touchend',function(e){
-        document.removeEventListener('touchmove',preventDefault);
+        document.removeEventListener('touchmove',tgPreventDefault);
     });
     if(TouchGesture.debug == true){
         document.addEventListener('touchmove',function(e){
@@ -1034,4 +1133,96 @@ function tg_IsMobile(){
     }
     TouchGesture.VideoGesture.insertAll();
     setInterval(TouchGesture.VideoGesture.insertAll, 2000);
+}
+
+function tgPreventDefault(e){
+    e.preventDefault();
+    return false;
+};
+
+function tgSettingPage(){
+    console.log("setting page");
+    var targetDomain = tgGetQueryString("target");
+    console.log(targetDomain);
+    console.log(TGUserSetting);
+    var websiteSetting;
+    if(TGUserSetting.website[targetDomain]){
+        websiteSetting=TGUserSetting.website[targetDomain];
+        // console.log("found");
+    }else{
+        // console.log("not found");
+        websiteSetting={
+            wSwitchEnable:true,
+            wSwitchState:true,
+            wSwitchProgress:true,
+            wSwitchBrightness:true,
+            wSwitchVolume:true,
+            wSwitchSpeedX4:true,
+            wSwitchSpeedX4Sigle:true,
+            wSwitchSpeed:true
+        };
+    }
+    
+    $(".g_tgs").each(function(index,ele){
+        var val = TGUserSetting.global[ele.id];
+        if(val==false){
+            ele.classList.remove("mui-active")
+        }
+    });
+    $("#gSelectToastPos").text(TGUserSetting.global["gSelectToastPos"]);
+
+    $(".w_tgs").each(function(index,ele){
+        var val = websiteSetting[ele.id];
+        if(val==false){
+            ele.classList.remove("mui-active")
+        }
+    });
+
+    document.getElementById("globalSettingInput").addEventListener("change",function(){
+        var gVal = document.getElementById("globalSettingInput").value;
+        gVal = JSON.parse(gVal);
+        TGUserSetting.global = gVal;
+        GM_setValue("tg_setting",JSON.stringify(TGUserSetting));
+    });
+
+    document.getElementById("websiteSettingInput").addEventListener("change",function(){
+        // alert("change");
+        var wVal = document.getElementById("websiteSettingInput").value;
+        wVal = JSON.parse(wVal);
+        TGUserSetting.website[targetDomain] = wVal;
+        GM_setValue("tg_setting",JSON.stringify(TGUserSetting));
+    });
+
+    document.getElementById("resetSettingInput").addEventListener("change",function(){
+        // alert("reset");
+        GM_setValue("tg_setting",JSON.stringify(TGUserDefaultSetting));
+    });
+}
+
+function tgGetQueryString(name){
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var r = window.location.search.substr(1).match(reg);
+    if (r != null) return unescape(r[2]); return null;
+}
+
+
+(function() {
+    if(whetherInBlackList()){
+        return;
+    }
+
+    TGUserSetting = GM_getValue("tg_setting",JSON.stringify(TGUserDefaultSetting));
+    TGUserSetting = JSON.parse(TGUserSetting);
+    // console.log(TGUserSetting);
+    // Your code here...
+
+    var domain = window.location.host;
+    
+    if(domain == "herochansysu.gitlab.io"){
+    // if(domain == "127.0.0.1:8848"){
+        tgSettingPage();
+    }else{
+        tgVideoPageInit();
+    }
+
 })();
