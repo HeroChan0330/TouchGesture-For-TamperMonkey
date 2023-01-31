@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         触摸屏视频优化
 // @namespace    https://github.com/HeroChan0330
-// @version      2.21
+// @version      2.22
 // @description  触摸屏视频播放手势支持，上下滑调整音量，左右滑调整进度
 // @author       HeroChanSysu
 // @match        https://*/*
@@ -35,7 +35,7 @@ var TouchGestureBlackList=[
 ];
 
 var TouchGesture={forbidScroll:false,orientationLocked:false,ismobile:false,debug:false};
-var TouchGestureSetting = {volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true};
+var TouchGestureSetting = {volume:true,brightness:true,progress:true,speed:true,speedx4:true,speedx4single:true,state:true,forbidScrollNFS:false};
 /*
 *    WhiteList format
 *    function container(video_element){
@@ -286,6 +286,9 @@ TouchGesture.VideoGesture=function(videoElement){
     this._videoElement.addEventListener('pause', function () {
         self._settingBtn.style.display = "block";
         self.setSettingBtnLayout();
+        setTimeout(() => {
+            self._settingBtn.style.display = "none";
+        }, 3000);
     });
 
 };
@@ -341,8 +344,8 @@ TouchGesture.VideoGesture.prototype.createDom=function(parentElement){
     this._settingBtn.onclick=function(event){
         // alert("setting clicked");
         var domain = window.location.host;
-        var url = "https://herochansysu.gitlab.io/touchgesturesetting/index.html?target="+domain;
-        // var url = "http://127.0.0.1:8848/TouchGestureSetting/index.html?target="+domain;
+        var url = "https://herochansysu.gitlab.io/touchgesturesetting/index_v2.html?target="+domain;
+        // var url = "http://192.168.1.33:8848/TouchGestureSetting/index_v2.html?target="+domain;
         // window.parent.open(url);
          window.parent.location.href = url;
     };
@@ -395,7 +398,18 @@ TouchGesture.VideoGesture.prototype.findBestRoot=function(callback){
 TouchGesture.VideoGesture.prototype.findBestRootByParent=function(){
     var self=this;
     var targetElement=this._videoElement;
-    if(self._fullScreenNow==false){
+    var elementInFullScreen = false;
+    if(self._fullScreenNow == true){
+        var temp = targetElement;
+        while(temp != null){
+            if(temp == document.fullscreenElement){
+                elementInFullScreen = true;
+            }
+            temp = temp.parent;
+        }
+    }
+
+    if(elementInFullScreen==false){
         targetElement=targetElement.parentElement;
         var topest=false;
         while(!topest){
@@ -419,6 +433,13 @@ TouchGesture.VideoGesture.prototype.findBestRootByParent=function(){
         if(document.fullscreenElement!=null){
             self._containElement=document.fullscreenElement;
             self._eventListenElement=document.fullscreenElement;
+            // // delete other toast for other video under fullscreen
+            // if(self._containElement!=null){
+            //     var toasts = self._containElement.getElementsByClassName("TouchGesture_Toast");
+            //     toasts.forEach(t => {
+            //         self._containElement.removeChild(t);
+            //     });
+            // }
         }
     }
 }
@@ -624,7 +645,9 @@ TouchGesture.VideoGesture.prototype.onTouchMove=function(e){
                     offsetValStr="-"+Math.floor(-this.touchResult/60)+":"+(sec < 10? '0' + sec : sec);
                 }
             }
-
+            // if(this.touchResult==Infinity){
+            //     this._elementFrame.style.display="none";
+            // }
             if(this.touchResult>0)
                 this.setToast(seconds2TimeStr(this.startTouchVideoTime)+" +"+offsetValStr);
             else
@@ -771,7 +794,8 @@ TouchGesture.VideoGesture.prototype.applyDom=function(videoElement){
 // Resize时恢复元素原样，取消事件监听
 TouchGesture.VideoGesture.prototype.restoreDom=function(){
     if(this._containElement!=null){
-        this._containElement.appendChild(this._elementFrame);
+        // this._containElement.appendChild(this._elementFrame);
+        this._containElement.removeChild(this._elementFrame);
     }
 
     var temp=this._videoElement;
@@ -1084,6 +1108,13 @@ function tgVideoPageInit(){
     TouchGestureSetting["speedx4"] =  glb[4] && usr[4];
     TouchGestureSetting["state"] =  glb[5] && usr[5];
     TouchGestureSetting["speedx4single"] =  glb[6] && usr[6];
+    TouchGestureSetting["forbidScrollNFS"] =  false;
+    if(usrSetting!=null){
+        TouchGestureSetting["forbidScrollNFS"] =  (usrSetting["wSwitchForbidScrollNFS"]==true);
+    }
+    // console.log("forbidScrollNFS");
+    // console.log(TouchGestureSetting.forbidScrollNFS);
+    
     // console.log(glb);
     // console.log(usr);
 
@@ -1099,8 +1130,13 @@ function tgVideoPageInit(){
             document.addEventListener('touchmove',tgPreventDefault,{passive:false});
         }else{
             var noVideo=true;
-            for(var i=0;i<e.path.length;i++){
-                var element=e.path[i];
+            
+            const ev = window.event || e;
+            const path = e.path || (e.composedPath && e.composedPath());
+            // console.log(path);
+
+            for(var i=0;i<path.length;i++){
+                var element=path[i];
                 // console.log(element);
                 if(element.tagName=="VIDEO"||(element.classList&&element.classList.contains("TouchGestureForbidScroll"))){
                     // TouchGesture.forbidScroll=true;
@@ -1109,11 +1145,15 @@ function tgVideoPageInit(){
                 }
             }
 
-            
-            if(!noVideo){
-                document.addEventListener('touchmove',tgPreventDefault,{passive:false});
-            }else if(tg_IsFullscreen()==true){
-                if(e.touches[0].pageX>window.screen.width/8&&e.touches[0].pageX<window.screen.width){
+            var fs = tg_IsFullscreen();
+            if(fs == false && !noVideo){
+                if(TouchGestureSetting.forbidScrollNFS==false)
+                    document.addEventListener('touchmove',tgPreventDefault,{passive:false});
+            }else if(fs){
+                if(!noVideo){
+                    document.addEventListener('touchmove',tgPreventDefault,{passive:false});
+                }
+                else if(e.touches[0].pageX>window.screen.width/8&&e.touches[0].pageX<window.screen.width){
                     document.addEventListener('touchmove',tgPreventDefault,{passive:false});
                 }else{
                 }
@@ -1159,13 +1199,14 @@ function tgSettingPage(){
             wSwitchVolume:true,
             wSwitchSpeedX4:true,
             wSwitchSpeedX4Sigle:true,
-            wSwitchSpeed:true
+            wSwitchSpeed:true,
+            wSwitchForbidScrollNFS:false
         };
     }
     
     $(".g_tgs").each(function(index,ele){
         var val = TGUserSetting.global[ele.id];
-        if(val==false){
+        if(val!=true){
             ele.classList.remove("mui-active")
         }
     });
@@ -1173,7 +1214,7 @@ function tgSettingPage(){
 
     $(".w_tgs").each(function(index,ele){
         var val = websiteSetting[ele.id];
-        if(val==false){
+        if(val!=true){
             ele.classList.remove("mui-active")
         }
     });
@@ -1219,7 +1260,7 @@ function tgGetQueryString(name){
     var domain = window.location.host;
     
     if(domain == "herochansysu.gitlab.io"){
-    // if(domain == "127.0.0.1:8848"){
+    // if(domain == "192.168.1.33:8848"){
         tgSettingPage();
     }else{
         tgVideoPageInit();
